@@ -1,0 +1,29 @@
+.cart-widget {
+    position: relative;
+    width: 3em;
+    height: 2.5em;
+    border-radius: 50%;
+    background: lightblue;
+    .badge {
+      position:absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 2em;
+      height: 2em;
+      font-size: 0.5rem;
+      font-weight: 700;
+      transform: translate(135%);
+      padding: 2px;
+      border-radius: 50%;
+      color: white;
+      background: rgb(207, 55, 55);
+      opacity: 0;
+    }& .badge:hover {
+      opacity: 1;
+    }
+    .img-cart-widget {
+      // margin-top: -8px;
+      width: 90%;
+    }
+  }

@@ -1,0 +1,22 @@
+.card-count {
+  display: block;
+  width: 100px;
+  .header-card-count,
+  .footer-card-count {
+    font-size: 1rem;
+  }
+  .body-card-count {
+    padding: 10px 0;
+  }
+  .button-card-count-add,
+  .button-card-count-subtract{
+    border: 1px solid black;
+    width: 20px;
+    margin-left: 5px;
+  }
+
+  .button-card-count {
+    width: 100%;
+    border: 1px solid black;
+  }
+}
