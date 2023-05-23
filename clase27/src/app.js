@@ -1,67 +1,45 @@
 import express from "express";
-import mongoose from "mongoose";
-import cookieParser from "cookie-parser";
-import { Server } from "socket.io";
-import handlebars from "express-handlebars";
-import { __dirname } from "./utils.js";
-import viewsRouter from "./routes/web/views.router.js";
-import productsRouter from "./routes/api/products.router.js";
-import cartsRouter from "./routes/api/carts.router.js";
-import sessionsRouter from "./routes/api/sessions.router.js";
-import initializePassport from "./config/passport.config.js";
-import passport from "passport";
 
-import Messages from "./dao/dbManagers/messages.js";
-const messagesManager = new Messages();
+import handlebars from 'express-handlebars';
+import Handlebars from 'handlebars';
+import { allowInsecurePrototypeAccess } from '@handlebars/allow-prototype-access';
 
+import mongoose from 'mongoose';
+import initializePassport from './config/passport.config.js';
+import cookieParser from 'cookie-parser';
+import passport from 'passport';
+
+import { __dirname } from './utils.js';
+import indexRoutes from './routes/index.routes.js';
+import config from './config/config.js';
+
+// Aplicacion
 const app = express();
 
-app.use(express.static(`${__dirname}/public`));
+// MongoDB
+mongoose.set('strictQuery', true);
+mongoose.connect(config.MONGO_URL).
+    catch(err => console.log('Error al conectar a MongoDB', err));
 
-app.engine("handlebars", handlebars.engine());
-app.set("views", `${__dirname}/views`);
-app.set("view engine", "handlebars");
 
+// Handlebars config
+app.engine('hbs', handlebars.engine({
+    extname: 'hbs',
+    defaultLayout: 'main',
+    handlebars: allowInsecurePrototypeAccess(Handlebars)
+}))
+app.set('view engine', 'hbs');
+app.set('views', `${__dirname}/views`);
+
+// Middlewares
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }))
+app.use(express.static(`${__dirname}/public`))
 app.use(cookieParser());
-
-const URI =
-  "mongodb+srv://gabriel:Coder2023@coderhouse.gszwtre.mongodb.net/ecommerce?retryWrites=true&w=majority";
-
-try {
-  await mongoose.connect(URI);
-  console.log("Connected to Atlas mongoDB");
-} catch (error) {
-  console.log(error);
-}
-
 initializePassport();
 app.use(passport.initialize());
 
-app.use("/api/products", productsRouter);
-app.use("/api/carts", cartsRouter);
-app.use("/api/sessions", sessionsRouter);
-app.use("/", viewsRouter);
+app.use('/', indexRoutes);
 
-const server = app.listen(8080, () => console.log("Listening on port 8080"));
-const io = new Server(server);
-
-io.on("connection", (socket) => {
-  console.log(`Nuevo cliente conectado. ID: ${socket.id}`);
-
-  socket.on("message", async ({ user, message }) => {
-    await messagesManager.addMessage(user, message);
-    const messages = await messagesManager.getAll();
-
-    io.emit("messageLogs", messages);
-  });
-
-  socket.on("authenticated", async (user) => {
-    const messages = await messagesManager.getAll();
-    socket.emit("messageLogs", messages);
-    socket.broadcast.emit("newUserConnected", user);
-  });
-});
-
-export { io };
+// Inicio Server
+app.listen(config.PORT, () => console.log(`Server up in port ${config.PORT}`))

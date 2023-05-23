@@ -1,83 +1,37 @@
-import { fileURLToPath } from "url";
-import path, { dirname } from "path";
-import fs from "fs";
+import path from 'path';
+import { fileURLToPath } from 'url';
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import passport from "passport";
+import passport from 'passport';
+import config from './config/config.js';
+import jwt from 'jsonwebtoken';
 
+// password hash
+export const hashPassword = (password) => bcrypt.hashSync(password, bcrypt.genSaltSync(10));
+export const isValidPass = (user, password) => bcrypt.compareSync(password, user.password);
+
+// file path correction
 const __filename = fileURLToPath(import.meta.url);
+export const __dirname = path.dirname(__filename);
 
-const __dirname = dirname(__filename);
-
-export const PRIVATE_KEY = "CoderSecret";
-
-export const generateToken = (user) =>
-  jwt.sign({ user }, PRIVATE_KEY, { expiresIn: "24h" });
-
+//passportCall
 export const passportCall = (strategy) => {
-  return async (req, res, next) => {
-    passport.authenticate(strategy, function (err, user, info) {
-      if (err) return next(err);
+    return async(req, res, next) => {
+        passport.authenticate(strategy, (err, user, info) => {
+            if(err) return next(err);
+            if(!user) {
+                return res.status(401).send({error: info.messages ? info.messages : info.toString()})
+            }
+            req.user = user;
+            next();
+        })(req, res, next);
+    }
+}
 
-      if (!user) {
-        return res
-          .status(401)
-          .send({ error: info.messages ? info.messages : info.toString() });
-      }
-
-      req.user = user;
-      next();
-    })(req, res, next);
-  };
-};
-
-export const createHash = (password) =>
-  bcrypt.hashSync(password, bcrypt.genSaltSync(10));
-
-export const validatePassword = (user, password) =>
-  bcrypt.compareSync(password, user.password);
-
-// fileSystem
-const generateId = (array) => {
-  return array.length === 0 ? 1 : array[array.length - 1]._id + 1;
-};
-
-const validateId = (id, array) => {
-  return array.some((p) => p._id === Number(id));
-};
-
-const getAbsolutePath = async (relativePath) => {
-  try {
-    const absolutePath = path.join(__dirname, relativePath);
-    if (!fs.existsSync(absolutePath))
-      await fs.promises.writeFile(absolutePath, JSON.stringify([]));
-    return absolutePath;
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-const writeInfo = async (data, path) => {
-  try {
-    return await fs.promises.writeFile(path, JSON.stringify(data, null, "\t"));
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-const readInfo = async (path) => {
-  try {
-    return await fs.promises.readFile(path, "utf-8");
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-export {
-  __dirname,
-  generateId,
-  validateId,
-  writeInfo,
-  readInfo,
-  getAbsolutePath,
-};
+// login con admin
+export const admin = {
+    user: config.ADMIN_EMAIL,
+    password: config.ADMIN_PASSWORD,
+    first_name: 'ad',
+    last_name: 'min',
+    role: "admin"
+}
